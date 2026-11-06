@@ -76,7 +76,7 @@
         </button>
 
         <!-- Open Google Sheet Link -->
-        <a href="https://docs.google.com/spreadsheets/d/1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os/edit?usp=drivesdk" target="_blank" rel="noopener noreferrer" title="구글 스프레드시트 열기" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-700 text-xs font-medium transition">
+        <a href="https://docs.google.com/spreadsheets/d/1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer" title="구글 스프레드시트 열기" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-700 text-xs font-medium transition">
           <span>시트 열기</span>
         </a>
 
@@ -119,11 +119,6 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-
-        <button id="instructorModeBtn" type="button" class="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition shrink-0">
-          <span id="instructorDot" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-          <span>강의자 답변모드</span>
-        </button>
 
         <button id="loadDemoBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200/70 text-[11px] text-slate-600 transition shrink-0" title="샘플 질문 다시 불러오기">
           샘플 대화 미리보기
@@ -255,7 +250,7 @@
       <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
         <div>
           <h2 class="text-base font-bold text-slate-900">⚙️ 구글 스프레드시트 연동 설정</h2>
-          <p class="text-xs text-slate-500 mt-0.5">시트 ID: 1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os</p>
+          <p class="text-xs text-slate-500 mt-0.5">시트 ID: 1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8</p>
         </div>
         <button id="closeSetupModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1">✕</button>
       </div>
@@ -264,7 +259,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
           <div class="sm:col-span-2">
             <label class="block text-xs font-semibold text-slate-700 mb-1">Google 스프레드시트 ID</label>
-            <input id="sheetIdInput" type="text" value="1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:border-blue-500" />
+            <input id="sheetIdInput" type="text" value="1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:border-blue-500" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">시트 탭 이름</label>
@@ -289,15 +284,33 @@
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
     var data = JSON.parse(e.postData.contents);
     if (data.action === 'ask') {
-      sheet.appendRow([data.question || '', '', data.userId || '익명']);
-      return ContentService.createTextOutput(JSON.stringify({ ok: true }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    if (data.action === 'answer') {
-      var rowIndex = Number(data.rowNumber);
-      if (rowIndex &gt;= 2) {
-        sheet.getRange(rowIndex, 2).setValue(data.answer || '');
+      var now = new Date();
+      var timeStr = data.time || Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
+      
+      // 시트 1행 헤더(질문, 답변, id, 시간) 열 위치를 자동 감지합니다
+      var headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 4)).getValues()[0];
+      var colQ = -1, colA = -1, colId = -1, colTime = -1;
+      for (var i = 0; i &lt; headers.length; i++) {
+        var h = String(headers[i] || '').trim().toLowerCase();
+        if (h.indexOf('질문') !== -1 || h === 'question') colQ = i;
+        else if (h.indexOf('답변') !== -1 || h === 'answer') colA = i;
+        else if (h === 'id' || h.indexOf('작성자') !== -1 || h.indexOf('사용자') !== -1) colId = i;
+        else if (h.indexOf('시간') !== -1 || h.indexOf('time') !== -1 || h.indexOf('일시') !== -1) colTime = i;
       }
+      // 헤더 미지정 시 기본 순서: A(질문), B(답변), C(id), D(시간)
+      if (colQ === -1) colQ = 0;
+      if (colA === -1) colA = 1;
+      if (colId === -1) colId = 2;
+      if (colTime === -1) colTime = 3;
+      
+      var maxCol = Math.max(colQ, colA, colId, colTime) + 1;
+      var rowData = new Array(maxCol).fill('');
+      rowData[colQ] = data.question || '';
+      rowData[colA] = ''; // 강의자가 시트 B열에서 직접 작성
+      rowData[colId] = data.userId || '익명';
+      rowData[colTime] = timeStr;
+      
+      sheet.appendRow(rowData);
       return ContentService.createTextOutput(JSON.stringify({ ok: true }))
         .setMimeType(ContentService.MimeType.JSON);
     }
@@ -313,7 +326,8 @@
           <input
             id="scriptUrlInput"
             type="url"
-            placeholder="https://script.google.com/macros/s/.../exec"
+            value="https://script.google.com/macros/s/AKfycbyGd6IuZVauUfeTm15964p0BJLul-g-uYAv7NgaFsT1mkvi3JGpD8O1kiqR-Exgpw_P/exec"
+            placeholder="https://script.google.com/macros/s/AKfycbyGd6IuZVauUfeTm15964p0BJLul-g-uYAv7NgaFsT1mkvi3JGpD8O1kiqR-Exgpw_P/exec"
             class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-blue-500"
           />
         </div>
@@ -343,9 +357,9 @@
   </div>
 
   <script>
-    const DEFAULT_SHEET_ID = "1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os";
+    const DEFAULT_SHEET_ID = "1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8";
     const DEFAULT_SHEET_NAME = "시트1";
-    const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhIcVb_SyLt3WAHTHCzyChCKxvvekUG9avEn9neOaRvA7G18S3GfM-6a3nORNNHie6/exec";
+    const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGd6IuZVauUfeTm15964p0BJLul-g-uYAv7NgaFsT1mkvi3JGpD8O1kiqR-Exgpw_P/exec";
 
     const storage = {
       get(key, fallback = "") {
@@ -375,6 +389,7 @@
         question: "교수님! 오늘 강의 후반부에 설명해주신 비동기 처리(Async/Await)에서 에러 핸들링은 try-catch로 감싸는 게 가장 일반적인가요?",
         answer: "네 맞습니다! async 함수 내부에서는 try-catch 블록을 사용하는 것이 가장 가독성이 좋고, 호출부에서 .catch()를 병행할 수도 있습니다.",
         userId: "질문하는돌고래_24",
+        time: "15:20",
         source: "local"
       },
       {
@@ -382,6 +397,7 @@
         question: "기말 텀프로젝트 팀 인원은 몇 명까지 가능한지, 1인 개인 프로젝트로 진행해도 되는지 궁금합니다.",
         answer: "팀당 최대 3명까지 가능하며, 1인 개인으로 진행하셔도 평가 기준은 동일하게 적용됩니다.",
         userId: "열정적인부엉이_81",
+        time: "15:22",
         source: "local"
       },
       {
@@ -389,21 +405,35 @@
         question: "오늘 실습한 예제 코드와 강의안 PDF는 어디서 다운로드할 수 있나요?",
         answer: "",
         userId: "호기심많은수달_53",
+        time: "15:25",
         source: "local"
       }
     ];
 
+    let storedSheetId = storage.get("qa_sheet_id", DEFAULT_SHEET_ID);
+    if (storedSheetId === "1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os") {
+      storedSheetId = DEFAULT_SHEET_ID;
+      storage.set("qa_sheet_id", DEFAULT_SHEET_ID);
+    }
+
     const state = {
       template: "messenger",
-      sheetId: storage.get("qa_sheet_id", DEFAULT_SHEET_ID),
+      sheetId: storedSheetId,
       sheetName: storage.get("qa_sheet_name", DEFAULT_SHEET_NAME),
-      scriptUrl: storage.get("qa_script_url", DEFAULT_SCRIPT_URL),
+      scriptUrl: (() => {
+        let u = storage.get("qa_script_url", DEFAULT_SCRIPT_URL);
+        if (!u || u.trim() === "") {
+          u = DEFAULT_SCRIPT_URL;
+          storage.set("qa_script_url", DEFAULT_SCRIPT_URL);
+        }
+        return u;
+      })(),
       detectedIp: "확인 중...",
       ipSeedName: "",
       userId: storage.get("qa_user_id", ""),
       filter: "all",
       searchQuery: "",
-      instructorMode: false,
+      
       autoRefresh: true,
       sheetRows: [],
       localPending: []
@@ -411,15 +441,12 @@
 
     try {
       const savedPending = storage.get("qa_local_pending", "");
-      if (savedPending) {
-        const parsed = JSON.parse(savedPending);
-        state.localPending = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...INITIAL_SAMPLE_DATA];
-      } else {
-        state.localPending = [...INITIAL_SAMPLE_DATA];
-      }
+      state.localPending = savedPending ? JSON.parse(savedPending) || [] : [];
     } catch (e) {
-      state.localPending = [...INITIAL_SAMPLE_DATA];
+      state.localPending = [];
     }
+    state.renderedKeys = new Set();
+    state.hasInitialRender = false;
 
     const TEMPLATE_META = {
       messenger: {
@@ -450,6 +477,30 @@
       "다람쥐", "수달", "펭귄", "돌고래", "여우",
       "고양이", "강아지", "판다", "토끼", "코알라"
     ];
+
+        function formatDisplayTime(rawTime) {
+      if (!rawTime) {
+        const now = new Date();
+        return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      }
+      const str = String(rawTime).trim();
+      const dateMatch = str.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+      if (dateMatch) {
+        const hh = String(dateMatch[4] !== undefined ? dateMatch[4] : 0).padStart(2, "0");
+        const mm = String(dateMatch[5] !== undefined ? dateMatch[5] : 0).padStart(2, "0");
+        return `${hh}:${mm}`;
+      }
+      if (str.includes(":") && (str.includes("-") || str.includes("/"))) {
+        const parts = str.split(/[\sT]+/);
+        if (parts.length >= 2) {
+          return parts[1].slice(0, 5);
+        }
+      }
+      if (/^\d{1,2}:\d{2}/.test(str)) {
+        return str.slice(0, 5);
+      }
+      return str;
+    }
 
     function hashString(str) {
       let hash = 2166136261;
@@ -600,25 +651,58 @@
           const rows = response.table.rows || [];
           const parsed = [];
 
-          rows.forEach((r, idx) => {
-            const c = r.c || [];
-            const qVal = c[0] && c[0].v !== null && c[0].v !== undefined ? String(c[0].v).trim() : "";
-            const aVal = c[1] && c[1].v !== null && c[1].v !== undefined ? String(c[1].v).trim() : "";
-            const idVal = c[2] && c[2].v !== null && c[2].v !== undefined ? String(c[2].v).trim() : "";
+          let colQ = 0, colA = 1, colId = 2, colTime = 3;
 
-            if (idx === 0 && (qVal === "질문" || qVal.toLowerCase() === "question") && (idVal === "id" || aVal === "답변")) {
-              return;
+          // 헤더 자동 감지 (table.cols 또는 1행 확인)
+          if (response.table.cols && response.table.cols.length > 0) {
+            response.table.cols.forEach((col, idx) => {
+              const label = (col.label || "").trim().toLowerCase();
+              if (label.includes("질문") || label === "question") colQ = idx;
+              else if (label.includes("답변") || label === "answer") colA = idx;
+              else if (label === "id" || label.includes("작성자") || label.includes("사용자")) colId = idx;
+              else if (label.includes("시간") || label.includes("time") || label.includes("일시")) colTime = idx;
+            });
+          }
+
+          let startIdx = 0;
+          if (rows.length > 0) {
+            const r0 = rows[0].c || [];
+            const c0Str = r0.map(cell => cell && cell.v !== null ? String(cell.v).trim().toLowerCase() : "");
+            let isHeaderRow = false;
+            c0Str.forEach((val, idx) => {
+              if (val.includes("질문") || val === "question") { colQ = idx; isHeaderRow = true; }
+              else if (val.includes("답변") || val === "answer") { colA = idx; isHeaderRow = true; }
+              else if (val === "id" || val.includes("작성자") || val.includes("사용자")) { colId = idx; isHeaderRow = true; }
+              else if (val.includes("시간") || val.includes("time") || val.includes("일시")) { colTime = idx; isHeaderRow = true; }
+            });
+            if (isHeaderRow) {
+              startIdx = 1;
             }
-            if (!qVal && !aVal) return;
+          }
+
+          for (let idx = startIdx; idx < rows.length; idx++) {
+            const r = rows[idx];
+            const c = r.c || [];
+            const qVal = c[colQ] && c[colQ].v !== null && c[colQ].v !== undefined ? String(c[colQ].v).trim() : "";
+            const aVal = c[colA] && c[colA].v !== null && c[colA].v !== undefined ? String(c[colA].v).trim() : "";
+            const idVal = c[colId] && c[colId].v !== null && c[colId].v !== undefined ? String(c[colId].v).trim() : "";
+            const timeVal = colTime >= 0 && c[colTime] && c[colTime].v !== null && c[colTime].v !== undefined ? String(c[colTime].v).trim() : "";
+
+            if (!qVal && !aVal) continue;
 
             parsed.push({
-              rowNumber: idx + 2,
+              rowNumber: idx + 1,
               question: qVal,
               answer: aVal,
               userId: idVal || "익명",
+              time: timeVal,
               source: "sheet"
             });
-          });
+          }
+
+          const newRawSig = JSON.stringify(parsed);
+          const oldRawSig = JSON.stringify(state.sheetRows);
+          const isChanged = newRawSig !== oldRawSig;
 
           state.sheetRows = parsed;
 
@@ -631,7 +715,11 @@
             timeEl.textContent = `최근 동기화: ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
           }
 
-          renderMessages();
+          if (isChanged || isManual || !state.hasInitialRender) {
+            state.hasInitialRender = true;
+            renderMessages();
+          }
+
           if (isManual) showToast("구글 시트 데이터를 새로고침했습니다.");
           resolve(true);
         };
@@ -663,42 +751,17 @@
         .replace(/'/g, "&#039;");
     }
 
-    function renderInstructorReplyInput(item, itemKey, hasAnswer) {
-      if (!state.instructorMode) return "";
-      return `
-        <div class="mt-2.5 pt-2.5 border-t border-slate-200/80 flex items-center gap-2">
-          <input
-            type="text"
-            data-reply-input="${itemKey}"
-            value="${escapeHtml(item.answer || "")}"
-            placeholder="답변을 입력하면 시트 B열에 기록됩니다..."
-            class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-          />
-          <button
-            type="button"
-            data-reply-btn="${itemKey}"
-            data-source="${item.source}"
-            data-row="${item.rowNumber || ""}"
-            data-local-id="${item.localId || ""}"
-            class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shrink-0 transition"
-          >
-            ${hasAnswer ? "답변 수정" : "답변 등록"}
-          </button>
-        </div>
-      `;
-    }
-
     // Template 1: Minimal Messenger Style (Kakao/Toss Light Chat Bubble Look)
-    function renderMessengerItem(item, idx) {
+    function renderMessengerItem(item, itemKey, isNew = false) {
       const isMine = item.userId === state.userId;
       const hasAnswer = Boolean(item.answer && item.answer.trim());
       const avatarCls = getAvatarClass(item.userId);
       const avatarChar = (item.userId || "익")[0];
-      const itemKey = item.source === "sheet" ? `sheet_${item.rowNumber}_${idx}` : `local_${item.localId || idx}`;
+      const displayTime = formatDisplayTime(item.time || item.fullTime);
 
       return `
-        <div class="msg-appear flex flex-col ${isMine ? "items-end" : "items-start"}">
-          <div class="flex items-start gap-2.5 max-w-[90%] sm:max-w-[80%] ${isMine ? "flex-row-reverse" : ""}">
+        <div data-msg-key="${itemKey}" class="${isNew ? "msg-appear " : ""}flex flex-col ${isMine ? "items-end" : "items-start"}">
+          <div class="flex items-start gap-2.5 max-w-[92%] sm:max-w-[80%] ${isMine ? "flex-row-reverse" : ""}">
             <!-- Avatar -->
             <div class="w-8 h-8 rounded-full border ${avatarCls} flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-2xs">
               ${escapeHtml(avatarChar)}
@@ -709,19 +772,23 @@
               <div class="flex items-center gap-1.5 mb-1 px-0.5">
                 <span class="text-xs font-semibold text-slate-700">${escapeHtml(item.userId)}</span>
                 ${isMine ? `<span class="text-[10px] font-semibold text-blue-600">나</span>` : ""}
-                <span class="text-[10px] ${hasAnswer ? "text-emerald-600 font-medium" : "text-slate-400"}">
-                  ${hasAnswer ? "· 답변완료" : "· 질문"}
+                <span data-status-text class="text-[10px] ${hasAnswer ? "text-emerald-600 font-medium" : "text-slate-400"}">
+                  ${hasAnswer ? "· 답변완료" : ""}
                 </span>
               </div>
 
-              <!-- Question Chat Bubble -->
-              <div class="rounded-2xl ${
-                isMine
-                  ? "bg-blue-600 text-white rounded-tr-xs shadow-xs"
-                  : "bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs shadow-xs"
-              } px-4 py-2.5 text-sm whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(item.question)}</div>
+              <!-- Question Bubble with small time beside it -->
+              <div class="flex items-end gap-1.5 ${isMine ? "flex-row-reverse" : "flex-row"}">
+                <div class="rounded-2xl ${
+                  isMine
+                    ? "bg-blue-600 text-white rounded-tr-xs shadow-xs"
+                    : "bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs shadow-xs"
+                } px-4 py-2.5 text-sm whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(item.question)}</div>
+                <span class="text-[10px] text-slate-400 shrink-0 pb-0.5 select-none">${escapeHtml(displayTime)}</span>
+              </div>
 
-              <!-- Answer Bubble attached right below -->
+              <!-- Answer Container (populated when instructor writes answer directly in sheet) -->
+              <div data-answer-container data-answer-value="${escapeHtml(item.answer || "")}">
               ${
                 hasAnswer
                   ? `
@@ -731,14 +798,13 @@
                   </div>
                   <div class="rounded-2xl rounded-tl-xs bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-sm text-emerald-950 whitespace-pre-wrap break-words leading-relaxed shadow-2xs">
                     <div class="text-[11px] font-bold text-emerald-700 mb-0.5">강의자 답변</div>
-                    ${escapeHtml(item.answer)}
+                    <div data-answer-content>${escapeHtml(item.answer)}</div>
                   </div>
                 </div>
               `
                   : ""
               }
-
-              ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+              </div>
             </div>
           </div>
         </div>
@@ -892,30 +958,87 @@
         return true;
       });
 
+      // Handle Empty State
       if (filtered.length === 0) {
-        listEl.className = "space-y-3 pb-4";
+        listEl.className = "space-y-4 pb-4";
         listEl.innerHTML = `
-          <div class="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-300 bg-white/60 space-y-2">
+          <div id="emptyPlaceholder" class="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-300 bg-white/60 space-y-2">
             <p class="text-sm font-semibold text-slate-700">표시할 질문이 없습니다.</p>
-            <p class="text-xs text-slate-400">하단 입력창에 새 질문을 입력하거나 상단 [+샘플추가] 버튼을 눌러보세요.</p>
+            <p class="text-xs text-slate-400">하단 입력창에 새 질문을 입력해보세요.</p>
           </div>
         `;
+        if (state.renderedKeys) state.renderedKeys.clear();
         return;
       }
 
-      if (state.template === "compact") {
-        listEl.className = "rounded-xl border border-slate-200 bg-white divide-y divide-slate-200 shadow-2xs mb-4";
-        listEl.innerHTML = filtered.map((item, idx) => renderCompactItem(item, idx)).join("");
-      } else if (state.template === "pastel") {
-        listEl.className = "grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4";
-        listEl.innerHTML = filtered.map((item, idx) => renderPastelItem(item, idx)).join("");
-      } else if (state.template === "card") {
-        listEl.className = "space-y-3 pb-4";
-        listEl.innerHTML = filtered.map((item, idx) => renderCardItem(item, idx)).join("");
-      } else {
-        listEl.className = "space-y-4 pb-4";
-        listEl.innerHTML = filtered.map((item, idx) => renderMessengerItem(item, idx)).join("");
+      // Remove empty placeholder if transitioning to non-empty
+      const emptyEl = document.getElementById("emptyPlaceholder");
+      if (emptyEl) {
+        listEl.innerHTML = "";
+        if (state.renderedKeys) state.renderedKeys.clear();
       }
+
+      listEl.className = "space-y-4 pb-4";
+
+      // Smart In-Place DOM Diffing: preserve existing nodes so they NEVER flash or re-animate
+      const currentKeys = new Set();
+
+      filtered.forEach((item, idx) => {
+        const key = item.source === "sheet" ? `s_${item.rowNumber}` : `l_${item.localId || idx}`;
+        currentKeys.add(key);
+
+        const existingEl = listEl.querySelector(`[data-msg-key="${key}"]`);
+        const hasAnswer = Boolean(item.answer && item.answer.trim());
+
+        if (!existingEl) {
+          // Brand new question: create element with entrance animation
+          const temp = document.createElement("div");
+          temp.innerHTML = renderMessengerItem(item, key, true);
+          const newEl = temp.firstElementChild;
+          listEl.appendChild(newEl);
+          state.renderedKeys.add(key);
+        } else {
+          // Existing question: update only changed status/answer in-place with ZERO screen flicker
+          const statusEl = existingEl.querySelector("[data-status-text]");
+          if (statusEl) {
+            statusEl.className = `text-[10px] ${hasAnswer ? "text-emerald-600 font-medium" : "text-slate-400"}`;
+            statusEl.textContent = hasAnswer ? "· 답변완료" : "· 질문";
+          }
+
+          const answerBox = existingEl.querySelector("[data-answer-container]");
+          if (answerBox) {
+            const prevAns = answerBox.getAttribute("data-answer-value") || "";
+            const newAns = item.answer || "";
+            if (prevAns !== newAns) {
+              answerBox.setAttribute("data-answer-value", newAns);
+              if (hasAnswer) {
+                answerBox.innerHTML = `
+                  <div class="mt-2 flex items-start gap-2 max-w-full msg-appear">
+                    <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 shadow-2xs">
+                      A
+                    </div>
+                    <div class="rounded-2xl rounded-tl-xs bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-sm text-emerald-950 whitespace-pre-wrap break-words leading-relaxed shadow-2xs">
+                      <div class="text-[11px] font-bold text-emerald-700 mb-0.5">강의자 답변</div>
+                      <div data-answer-content>${escapeHtml(item.answer)}</div>
+                    </div>
+                  </div>
+                `;
+              } else {
+                answerBox.innerHTML = "";
+              }
+            }
+          }
+        }
+      });
+
+      // Remove any node in DOM that is no longer in filtered list
+      Array.from(listEl.children).forEach((child) => {
+        const k = child.getAttribute("data-msg-key");
+        if (k && !currentKeys.has(k)) {
+          child.remove();
+          state.renderedKeys.delete(k);
+        }
+      });
     }
 
     async function handleQuestionSubmit(e) {
@@ -934,11 +1057,20 @@
       input.value = "";
       input.style.height = "auto";
 
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      const timeStr = `${hh}:${mm}`;
+      const fullTimeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${hh}:${mm}:${ss}`;
+
       const newEntry = {
         localId: "loc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
         question: questionText,
         answer: "",
         userId: state.userId || "익명",
+        time: timeStr,
+        fullTime: fullTimeStr,
         source: "local"
       };
 
@@ -959,7 +1091,8 @@
             body: JSON.stringify({
               action: "ask",
               question: newEntry.question,
-              userId: newEntry.userId
+              userId: newEntry.userId,
+              time: newEntry.fullTime
             })
           });
           showToast("구글 스프레드시트에 질문이 기록되었습니다!");
@@ -971,55 +1104,6 @@
         }
       } else {
         showToast("질문이 대화창에 등록되었습니다!");
-      }
-    }
-
-    async function handleAnswerSubmit(btnEl) {
-      const key = btnEl.getAttribute("data-reply-btn");
-      const source = btnEl.getAttribute("data-source");
-      const rowNum = Number(btnEl.getAttribute("data-row"));
-      const localId = btnEl.getAttribute("data-local-id");
-      const inputEl = document.querySelector(`input[data-reply-input="${key}"]`);
-      if (!inputEl) return;
-
-      const answerText = inputEl.value.trim();
-
-      if (source === "local") {
-        const target = state.localPending.find((x) => x.localId === localId);
-        if (target) {
-          target.answer = answerText;
-          storage.set("qa_local_pending", JSON.stringify(state.localPending));
-          renderMessages();
-          showToast("답변이 반영되었습니다.");
-        }
-        return;
-      }
-
-      const sheetTarget = state.sheetRows.find((x) => x.rowNumber === rowNum);
-      if (sheetTarget) {
-        sheetTarget.answer = answerText;
-        renderMessages();
-      }
-
-      if (state.scriptUrl && state.scriptUrl.startsWith("http")) {
-        try {
-          await fetch(state.scriptUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              action: "answer",
-              rowNumber: rowNum,
-              answer: answerText
-            })
-          });
-          showToast(`시트 #${rowNum}행 B열에 답변이 업데이트되었습니다!`);
-          setTimeout(() => fetchSheetData(false), 1200);
-        } catch (e) {
-          showToast("시트 답변 저장 중 오류가 발생했습니다.");
-        }
-      } else {
-        showToast("답변이 화면에 표시되었습니다.");
       }
     }
 
@@ -1061,27 +1145,6 @@
       document.getElementById("searchInput").addEventListener("input", (e) => {
         state.searchQuery = e.target.value;
         renderMessages();
-      });
-
-      document.getElementById("instructorModeBtn").addEventListener("click", () => {
-        state.instructorMode = !state.instructorMode;
-        const dot = document.getElementById("instructorDot");
-        const btn = document.getElementById("instructorModeBtn");
-        if (state.instructorMode) {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
-          btn.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-700 transition shrink-0";
-          showToast("답변모드 ON: 각 질문 아래에서 바로 답변을 달아볼 수 있습니다.");
-        } else {
-          dot.className = "w-1.5 h-1.5 rounded-full bg-slate-400";
-          btn.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition shrink-0";
-          showToast("답변모드가 해제되었습니다.");
-        }
-        renderMessages();
-      });
-
-      document.getElementById("messagesList").addEventListener("click", (e) => {
-        const replyBtn = e.target.closest("[data-reply-btn]");
-        if (replyBtn) handleAnswerSubmit(replyBtn);
       });
 
       document.getElementById("manualRefreshBtn").addEventListener("click", () => {
