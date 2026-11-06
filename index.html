@@ -2,15 +2,33 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
   <title>대학 강의 실시간 익명 Q&A 라운지</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      height: var(--app-height, 100dvh);
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+    }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif;
+      overscroll-behavior: none;
+    }
+    @media (max-width: 640px) {
+      input, textarea {
+        font-size: 16px !important; /* 모바일 자동 확대 방지 */
+      }
     }
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
@@ -35,10 +53,10 @@
     }
   </style>
 </head>
-<body id="appBody" class="bg-[#EEF2F6] text-slate-800 h-screen flex flex-col overflow-hidden">
+<body id="appBody" class="bg-[#EEF2F6] text-slate-800 h-full h-[100dvh] flex flex-col overflow-hidden select-none sm:select-auto">
 
   <!-- Clean Minimal Header -->
-  <header id="appHeader" class="bg-white border-b border-slate-200/80 px-4 py-2.5 shrink-0 z-20">
+  <header id="appHeader" class="bg-white border-b border-slate-200/80 px-3 py-2 sm:px-4 sm:py-2.5 shrink-0 z-20">
     <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
       <!-- Left: Title & Sync Status -->
       <div class="flex items-center gap-2.5">
@@ -93,7 +111,7 @@
   </header>
 
   <!-- Compact Filter & Search Bar -->
-  <div class="bg-white/80 border-b border-slate-200/70 px-4 py-1.5 shrink-0">
+  <div class="bg-white/80 border-b border-slate-200/70 px-3 py-1.5 sm:px-4 shrink-0">
     <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
       <!-- Filter Pills -->
       <div class="flex items-center gap-1">
@@ -138,7 +156,7 @@
   </div>
 
   <!-- Main Stream Container -->
-  <main id="chatContainer" class="flex-1 overflow-y-auto custom-scrollbar px-4 py-5">
+  <main id="chatContainer" class="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar px-3 py-3 sm:px-4 sm:py-4">
     <div class="max-w-4xl mx-auto">
       <!-- Info Pill -->
       <div class="text-center mb-4">
@@ -154,13 +172,13 @@
     </div>
   </main>
 
-  <!-- Clean Light Bottom Input Bar -->
-  <footer class="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
+  <!-- Clean Light Bottom Input Bar (Pinned firmly above mobile navigation bars) -->
+  <footer class="bg-white border-t border-slate-200 px-3 pt-2 pb-2 sm:px-4 sm:py-3 shrink-0 z-20" style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
     <div class="max-w-4xl mx-auto">
-      <form id="questionForm" class="flex flex-col gap-1.5">
-        <div class="flex items-end gap-2">
-          <!-- Nickname Quick Button -->
-          <button id="footerNickBtn" type="button" title="클릭하여 닉네임(ID) 변경" class="hidden sm:flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200/70 border border-slate-200 text-xs font-semibold text-slate-700 shrink-0 transition">
+      <form id="questionForm" class="flex flex-col gap-1 sm:gap-1.5">
+        <div class="flex items-end gap-1.5 sm:gap-2">
+          <!-- Nickname Quick Button (Desktop only) -->
+          <button id="footerNickBtn" type="button" title="클릭하여 닉네임(ID) 변경" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200/70 border border-slate-200 text-xs font-semibold text-slate-700 shrink-0 transition">
             <span class="w-2 h-2 rounded-full bg-blue-500"></span>
             <span id="footerNickText" class="max-w-[100px] truncate">익명</span>
           </button>
@@ -170,8 +188,8 @@
             <textarea
               id="questionInput"
               rows="1"
-              placeholder="궁금한 점을 편하게 질문해보세요... (Enter 전송)"
-              class="w-full bg-slate-100/90 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-2xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none resize-none max-h-32 custom-scrollbar leading-relaxed transition"
+              placeholder="궁금한 점을 편하게 질문해보세요..."
+              class="w-full bg-slate-100/90 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none resize-none max-h-24 sm:max-h-32 custom-scrollbar leading-snug sm:leading-relaxed transition"
             ></textarea>
           </div>
 
@@ -179,21 +197,21 @@
           <button
             id="submitQuestionBtn"
             type="submit"
-            class="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center gap-1.5 shadow-sm transition shrink-0"
+            class="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-semibold text-xs sm:text-sm flex items-center gap-1 shadow-sm transition shrink-0"
           >
             <span>질문 등록</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </button>
         </div>
 
-        <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 px-0.5">
           <div class="flex items-center gap-2">
             <span id="lastSyncedTime">동기화 대기중</span>
           </div>
           <label class="inline-flex items-center gap-1 cursor-pointer select-none text-slate-500">
-            <input id="autoRefreshToggle" type="checkbox" checked class="rounded border-slate-300 text-blue-600 focus:ring-0" />
+            <input id="autoRefreshToggle" type="checkbox" checked class="rounded border-slate-300 text-blue-600 focus:ring-0 scale-90 sm:scale-100" />
             <span>5초 자동 새로고침</span>
           </label>
         </div>
@@ -354,6 +372,18 @@
   </div>
 
   <script>
+    // 갤럭시 등 모바일 브라우저 툴바/네비게이션바 잘림 방지 (Visual Viewport 정확한 높이 계산)
+    function updateAppHeight() {
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${h}px`);
+    }
+    window.addEventListener('resize', updateAppHeight);
+    window.addEventListener('orientationchange', updateAppHeight);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateAppHeight);
+    }
+    updateAppHeight();
+
     const DEFAULT_SHEET_ID = "1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os";
     const DEFAULT_SHEET_NAME = "시트1";
     const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGd6IuZVauUfeTm15964p0BJLul-g-uYAv7NgaFsT1mkvi3JGpD8O1kiqR-Exgpw_P/exec";
