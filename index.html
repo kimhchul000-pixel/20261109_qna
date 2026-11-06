@@ -1,12 +1,1203 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>20261109 QnA</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>대학 강의 실시간 익명 Q&A 라운지</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.45);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.7);
+    }
+    @keyframes fadeInSlide {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .msg-appear {
+      animation: fadeInSlide 0.18s ease-out forwards;
+    }
+  </style>
 </head>
-<body>
-  <h1>Hello, GitHub!</h1>
-  <p>20261109_qna 리포지토리에 생성된 index.html 파일입니다.</p>
+<body id="appBody" class="bg-[#EEF2F6] text-slate-800 h-screen flex flex-col overflow-hidden">
+
+  <!-- Clean Minimal Header -->
+  <header id="appHeader" class="bg-white border-b border-slate-200/80 px-4 py-2.5 shrink-0 z-20">
+    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <!-- Left: Title & Sync Status -->
+      <div class="flex items-center gap-2.5">
+        <div id="brandBadge" class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+          Q
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-sm sm:text-base tracking-tight text-slate-900">강의 실시간 Q&A</h1>
+            <span id="syncBadge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span id="syncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span id="syncText">시트 연동중</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Nickname & Utility Buttons -->
+      <div class="flex items-center gap-1.5">
+        <!-- Nickname Pill -->
+        <button id="openNickModalBtn" type="button" class="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 transition text-xs text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          <span class="text-slate-500 hidden sm:inline">내 ID:</span>
+          <span id="currentUserIdDisplay" class="font-semibold text-slate-900 max-w-[115px] truncate">로딩중...</span>
+          <svg class="w-3 h-3 text-slate-400 group-hover:text-slate-700 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </button>
+
+        <!-- Manual Refresh -->
+        <button id="manualRefreshBtn" type="button" title="시트 데이터 새로고침" class="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-600 transition">
+          <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+
+        <!-- Open Google Sheet Link -->
+        <a href="https://docs.google.com/spreadsheets/d/1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os/edit?usp=drivesdk" target="_blank" rel="noopener noreferrer" title="구글 스프레드시트 열기" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-700 text-xs font-medium transition">
+          <span>시트 열기</span>
+        </a>
+
+        <!-- Setup Modal Button -->
+        <button id="openSetupModalBtn" type="button" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-700 text-xs font-medium transition">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>연동 설정</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Compact Filter & Search Bar -->
+  <div class="bg-white/80 border-b border-slate-200/70 px-4 py-1.5 shrink-0">
+    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <!-- Filter Pills -->
+      <div class="flex items-center gap-1">
+        <button data-filter="all" class="filter-tab px-2.5 py-1 rounded-lg text-xs font-semibold transition bg-slate-900 text-white">
+          전체 <span id="countAll" class="ml-0.5 opacity-80">0</span>
+        </button>
+        <button data-filter="unanswered" class="filter-tab px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-500 hover:bg-slate-100">
+          답변대기 <span id="countUnanswered" class="ml-0.5">0</span>
+        </button>
+        <button data-filter="answered" class="filter-tab px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-500 hover:bg-slate-100">
+          답변완료 <span id="countAnswered" class="ml-0.5">0</span>
+        </button>
+        <button data-filter="mine" class="filter-tab px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-500 hover:bg-slate-100">
+          내 질문 <span id="countMine" class="ml-0.5">0</span>
+        </button>
+      </div>
+
+      <!-- Right: Search + Instructor Mode + Sample Trigger -->
+      <div class="flex items-center gap-1.5 flex-1 sm:flex-initial justify-end">
+        <div class="relative flex-1 sm:w-44 max-w-[200px]">
+          <input id="searchInput" type="text" placeholder="검색..." class="w-full bg-slate-100/90 border border-slate-200 rounded-lg pl-7 pr-2.5 py-1 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500" />
+          <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        <button id="instructorModeBtn" type="button" class="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition shrink-0">
+          <span id="instructorDot" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span>강의자 답변모드</span>
+        </button>
+
+        <button id="loadDemoBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200/70 text-[11px] text-slate-600 transition shrink-0" title="샘플 질문 다시 불러오기">
+          샘플 대화 미리보기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtle GAS Setup Notice Banner (Dismissible) -->
+  <div id="gasNoticeBanner" class="bg-amber-50 border-b border-amber-200/80 px-4 py-1.5 shrink-0 hidden">
+    <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs text-amber-800">
+      <div class="flex items-center gap-1.5">
+        <span>💡 현재 <strong>디자인 미리보기 모드</strong>입니다. 나중에 시트에 직접 저장하려면 우측 상단 <strong>[설정]</strong>에서 Apps Script URL만 넣어주시면 됩니다.</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="bannerOpenSetupBtn" type="button" class="underline font-semibold hover:text-amber-950">1분 연동 가이드 보기</button>
+        <button id="dismissBannerBtn" type="button" class="text-amber-600 hover:text-amber-900 px-1">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Stream Container -->
+  <main id="chatContainer" class="flex-1 overflow-y-auto custom-scrollbar px-4 py-5">
+    <div class="max-w-4xl mx-auto">
+      <!-- Info Pill -->
+      <div class="text-center mb-4">
+        <span id="ipBadge" class="inline-block px-3 py-1 rounded-full bg-white/80 border border-slate-200/80 text-[11px] text-slate-500 shadow-sm">
+          익명 대화방 · 질문을 남기면 구글 스프레드시트(질문/답변/id)와 연동됩니다
+        </span>
+      </div>
+
+      <!-- Messages List -->
+      <div id="messagesList" class="space-y-3 pb-4">
+        <!-- Populated dynamically according to selected template -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Clean Light Bottom Input Bar -->
+  <footer class="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
+    <div class="max-w-4xl mx-auto">
+      <form id="questionForm" class="flex flex-col gap-1.5">
+        <div class="flex items-end gap-2">
+          <!-- Nickname Quick Button -->
+          <button id="footerNickBtn" type="button" title="클릭하여 닉네임(ID) 변경" class="hidden sm:flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200/70 border border-slate-200 text-xs font-semibold text-slate-700 shrink-0 transition">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            <span id="footerNickText" class="max-w-[100px] truncate">익명</span>
+          </button>
+
+          <!-- Input Field -->
+          <div class="relative flex-1">
+            <textarea
+              id="questionInput"
+              rows="1"
+              placeholder="궁금한 점을 편하게 질문해보세요... (Enter 전송)"
+              class="w-full bg-slate-100/90 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-2xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none resize-none max-h-32 custom-scrollbar leading-relaxed transition"
+            ></textarea>
+          </div>
+
+          <!-- Send Button -->
+          <button
+            id="submitQuestionBtn"
+            type="submit"
+            class="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center gap-1.5 shadow-sm transition shrink-0"
+          >
+            <span>질문 등록</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+          <div class="flex items-center gap-2">
+            <span id="lastSyncedTime">동기화 대기중</span>
+          </div>
+          <label class="inline-flex items-center gap-1 cursor-pointer select-none text-slate-500">
+            <input id="autoRefreshToggle" type="checkbox" checked class="rounded border-slate-300 text-blue-600 focus:ring-0" />
+            <span>5초 자동 새로고침</span>
+          </label>
+        </div>
+      </form>
+    </div>
+  </footer>
+
+  <!-- Modal 1: Nickname Modal (Light Clean Style) -->
+  <div id="nickModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-slate-900">🪪 내 익명 ID 변경</h2>
+        <button id="closeNickModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-500 leading-relaxed">
+        접속한 네트워크 IP를 기반으로 랜덤 닉네임이 자동 생성되었습니다. 원하는 이름이나 닉네임으로 자유롭게 바꿀 수 있으며, 질문 시 구글 시트 <strong>C열(id)</strong>에 기록됩니다.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">표시될 대화명 (ID)</label>
+          <div class="flex gap-2">
+            <input id="nickInput" type="text" maxlength="24" class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-blue-500" placeholder="예: 질문하는고래_24" />
+            <button id="randomNickBtn" type="button" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 shrink-0 transition">
+              🎲 랜덤 추천
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+          <span>감지된 IP 기준 시드:</span>
+          <code id="detectedIpText" class="text-blue-600 font-mono">확인 중...</code>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-1">
+        <button id="resetIpNickBtn" type="button" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-600 transition">
+          IP 기본값으로 복원
+        </button>
+        <button id="saveNickBtn" type="button" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition">
+          저장하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Google Sheets Setup Modal (Light Clean Style) -->
+  <div id="setupModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">⚙️ 구글 스프레드시트 연동 설정</h2>
+          <p class="text-xs text-slate-500 mt-0.5">시트 ID: 1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os</p>
+        </div>
+        <button id="closeSetupModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1">✕</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto custom-scrollbar space-y-4 text-xs sm:text-sm text-slate-600">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Google 스프레드시트 ID</label>
+            <input id="sheetIdInput" type="text" value="1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">시트 탭 이름</label>
+            <input id="sheetNameInput" type="text" value="시트1" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="font-semibold text-slate-900">📌 웹에서 시트로 바로 기록하기 (Apps Script 웹 앱 URL)</p>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            구글 시트 상단 <strong>[확장 프로그램] → [Apps Script]</strong>에 아래 코드를 붙여넣고 <strong>[배포] → [새 배포] (웹 앱, 모든 사용자)</strong>로 배포한 뒤 나오는 URL을 아래에 입력해 주세요.
+          </p>
+
+          <div class="relative bg-slate-900 rounded-xl p-3 font-mono text-[11px] text-slate-200 overflow-x-auto">
+            <button id="copyGasCodeBtn" type="button" class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-sans text-xs font-medium transition">
+              📋 스크립트 복사
+            </button>
+<pre id="gasCodeBlock" class="leading-relaxed">function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var data = JSON.parse(e.postData.contents);
+    if (data.action === 'ask') {
+      sheet.appendRow([data.question || '', '', data.userId || '익명']);
+      return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (data.action === 'answer') {
+      var rowIndex = Number(data.rowNumber);
+      if (rowIndex &gt;= 2) {
+        sheet.getRange(rowIndex, 2).setValue(data.answer || '');
+      }
+      return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}</pre>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Apps Script 웹 앱 URL</label>
+          <input
+            id="scriptUrlInput"
+            type="url"
+            placeholder="https://script.google.com/macros/s/.../exec"
+            class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-blue-500"
+          />
+        </div>
+      </div>
+
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+        <button id="clearLocalPendingBtn" type="button" class="text-xs text-slate-500 hover:text-rose-600 transition">
+          로컬 임시 질문 초기화
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="cancelSetupBtn" type="button" class="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-medium text-slate-700 transition">
+            닫기
+          </button>
+          <button id="saveSetupBtn" type="button" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition">
+            설정 저장 및 동기화
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastBox" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+    <div id="toastText" class="px-4 py-2 rounded-full bg-slate-900/90 text-xs font-medium text-white shadow-lg">
+      알림
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_SHEET_ID = "1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os";
+    const DEFAULT_SHEET_NAME = "시트1";
+    const DEFAULT_SCRIPT_URL = "";
+
+    const storage = {
+      get(key, fallback = "") {
+        try {
+          const val = localStorage.getItem(key);
+          return val !== null ? val : fallback;
+        } catch (e) {
+          return fallback;
+        }
+      },
+      set(key, val) {
+        try {
+          localStorage.setItem(key, val);
+        } catch (e) {}
+      },
+      remove(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      }
+    };
+
+    // Sample Q&A data pre-populated so user can immediately compare the 4 templates visually
+    const INITIAL_SAMPLE_DATA = [
+      {
+        localId: "sample_1",
+        question: "교수님! 오늘 강의 후반부에 설명해주신 비동기 처리(Async/Await)에서 에러 핸들링은 try-catch로 감싸는 게 가장 일반적인가요?",
+        answer: "네 맞습니다! async 함수 내부에서는 try-catch 블록을 사용하는 것이 가장 가독성이 좋고, 호출부에서 .catch()를 병행할 수도 있습니다.",
+        userId: "질문하는돌고래_24",
+        source: "local"
+      },
+      {
+        localId: "sample_2",
+        question: "기말 텀프로젝트 팀 인원은 몇 명까지 가능한지, 1인 개인 프로젝트로 진행해도 되는지 궁금합니다.",
+        answer: "팀당 최대 3명까지 가능하며, 1인 개인으로 진행하셔도 평가 기준은 동일하게 적용됩니다.",
+        userId: "열정적인부엉이_81",
+        source: "local"
+      },
+      {
+        localId: "sample_3",
+        question: "오늘 실습한 예제 코드와 강의안 PDF는 어디서 다운로드할 수 있나요?",
+        answer: "",
+        userId: "호기심많은수달_53",
+        source: "local"
+      }
+    ];
+
+    const state = {
+      template: "messenger",
+      sheetId: storage.get("qa_sheet_id", DEFAULT_SHEET_ID),
+      sheetName: storage.get("qa_sheet_name", DEFAULT_SHEET_NAME),
+      scriptUrl: storage.get("qa_script_url", DEFAULT_SCRIPT_URL),
+      detectedIp: "확인 중...",
+      ipSeedName: "",
+      userId: storage.get("qa_user_id", ""),
+      filter: "all",
+      searchQuery: "",
+      instructorMode: false,
+      autoRefresh: true,
+      sheetRows: [],
+      localPending: []
+    };
+
+    try {
+      const savedPending = storage.get("qa_local_pending", "");
+      if (savedPending) {
+        const parsed = JSON.parse(savedPending);
+        state.localPending = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...INITIAL_SAMPLE_DATA];
+      } else {
+        state.localPending = [...INITIAL_SAMPLE_DATA];
+      }
+    } catch (e) {
+      state.localPending = [...INITIAL_SAMPLE_DATA];
+    }
+
+    const TEMPLATE_META = {
+      messenger: {
+        desc: "1. 미니멀 메신저형: 카톡·토스처럼 말풍선 대화창과 하단 입력창 중심의 직관적인 채팅 디자인",
+        bodyBg: "bg-[#EEF2F6]"
+      },
+      card: {
+        desc: "2. 노션·슬라이도 카드형: 화이트 배경 위에 질문과 답변이 정갈한 카드로 구분되어 가독성이 높은 디자인",
+        bodyBg: "bg-[#F8FAFC]"
+      },
+      pastel: {
+        desc: "3. 파스텔 포스트잇 보드형: 따뜻한 크림색 배경과 파스텔톤 카드로 자유로운 질문 분위기를 유도하는 디자인",
+        bodyBg: "bg-[#FAF7F2]"
+      },
+      compact: {
+        desc: "4. 컴팩트 스레드형: 에브리타임·슬랙처럼 여백을 줄여 한 화면에 많은 질문을 빠르게 확인하는 리스트 디자인",
+        bodyBg: "bg-white"
+      }
+    };
+
+    const ADJECTIVES = [
+      "질문하는", "열정적인", "호기심많은", "집중하는", "반짝이는",
+      "성실한", "논리적인", "탐구하는", "잠이덜깬", "카페인충전",
+      "앞자리", "뒷자리", "노트필기왕", "아이디어뱅크", "새벽공부"
+    ];
+    const NOUNS = [
+      "대학생", "학부생", "새내기", "고래", "부엉이",
+      "다람쥐", "수달", "펭귄", "돌고래", "여우",
+      "고양이", "강아지", "판다", "토끼", "코알라"
+    ];
+
+    function hashString(str) {
+      let hash = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function generateNicknameFromSeed(seedStr) {
+      const h = hashString(seedStr);
+      const adj = ADJECTIVES[h % ADJECTIVES.length];
+      const noun = NOUNS[Math.floor(h / ADJECTIVES.length) % NOUNS.length];
+      const num = (h % 90) + 10;
+      return `${adj}${noun}_${num}`;
+    }
+
+    function generateRandomNickname() {
+      const randSeed = String(Date.now()) + "_" + Math.random().toString(36).slice(2);
+      return generateNicknameFromSeed(randSeed);
+    }
+
+    const AVATAR_STYLES = [
+      "bg-blue-100 text-blue-700 border-blue-200",
+      "bg-emerald-100 text-emerald-700 border-emerald-200",
+      "bg-violet-100 text-violet-700 border-violet-200",
+      "bg-amber-100 text-amber-700 border-amber-200",
+      "bg-rose-100 text-rose-700 border-rose-200",
+      "bg-cyan-100 text-cyan-700 border-cyan-200"
+    ];
+
+    const PASTEL_CARD_STYLES = [
+      { bg: "bg-[#FFFBEB]", border: "border-amber-200/90", accent: "text-amber-800", pill: "bg-amber-100 text-amber-800" },
+      { bg: "bg-[#F0FDF4]", border: "border-emerald-200/90", accent: "text-emerald-800", pill: "bg-emerald-100 text-emerald-800" },
+      { bg: "bg-[#EFF6FF]", border: "border-blue-200/90", accent: "text-blue-800", pill: "bg-blue-100 text-blue-800" },
+      { bg: "bg-[#FAF5FF]", border: "border-purple-200/90", accent: "text-purple-800", pill: "bg-purple-100 text-purple-800" },
+      { bg: "bg-[#FFF1F2]", border: "border-rose-200/90", accent: "text-rose-800", pill: "bg-rose-100 text-rose-800" }
+    ];
+
+    function getAvatarClass(userId) {
+      const h = hashString(userId || "익명");
+      return AVATAR_STYLES[h % AVATAR_STYLES.length];
+    }
+
+    function getPastelStyle(userId) {
+      const h = hashString(userId || "익명");
+      return PASTEL_CARD_STYLES[h % PASTEL_CARD_STYLES.length];
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const box = document.getElementById("toastBox");
+      const text = document.getElementById("toastText");
+      if (!box || !text) return;
+      text.textContent = msg;
+      box.classList.remove("opacity-0");
+      box.classList.add("opacity-100");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.remove("opacity-100");
+        box.classList.add("opacity-0");
+      }, 2200);
+    }
+
+    async function initUserIdentity() {
+      let ip = "local-session";
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const res = await fetch("https://api.ipify.org?format=json", { signal: controller.signal });
+        clearTimeout(timeout);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.ip) ip = data.ip;
+        }
+      } catch (e) {
+        ip = "browser-" + (navigator.language || "ko") + "-" + (screen.width || 1080);
+      }
+
+      state.detectedIp = ip;
+      state.ipSeedName = generateNicknameFromSeed(ip);
+
+      if (!state.userId) {
+        state.userId = state.ipSeedName;
+        storage.set("qa_user_id", state.userId);
+      }
+
+      updateUserDisplay();
+    }
+
+    function updateUserDisplay() {
+      const topDisp = document.getElementById("currentUserIdDisplay");
+      const footDisp = document.getElementById("footerNickText");
+      const ipDisp = document.getElementById("detectedIpText");
+
+      if (topDisp) topDisp.textContent = state.userId;
+      if (footDisp) footDisp.textContent = state.userId;
+      if (ipDisp) ipDisp.textContent = state.detectedIp;
+    }
+
+    function applyTemplateStyle() {
+      renderMessages();
+    }
+
+    function fetchSheetData(isManual = false) {
+      const syncDot = document.getElementById("syncDot");
+      const syncText = document.getElementById("syncText");
+      const refreshIcon = document.getElementById("refreshIcon");
+
+      if (isManual && refreshIcon) refreshIcon.classList.add("animate-spin");
+
+      return new Promise((resolve) => {
+        const callbackName = "gvizCb_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        const script = document.createElement("script");
+        let finished = false;
+
+        const cleanup = () => {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          try {
+            delete window[callbackName];
+          } catch (e) {
+            window[callbackName] = undefined;
+          }
+          if (refreshIcon) refreshIcon.classList.remove("animate-spin");
+        };
+
+        const timer = setTimeout(() => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          if (syncDot) syncDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
+          if (syncText) syncText.textContent = "샘플 미리보기중";
+          resolve(false);
+        }, 5000);
+
+        window[callbackName] = function (response) {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          cleanup();
+
+          if (!response || response.status === "error" || !response.table) {
+            resolve(false);
+            return;
+          }
+
+          const rows = response.table.rows || [];
+          const parsed = [];
+
+          rows.forEach((r, idx) => {
+            const c = r.c || [];
+            const qVal = c[0] && c[0].v !== null && c[0].v !== undefined ? String(c[0].v).trim() : "";
+            const aVal = c[1] && c[1].v !== null && c[1].v !== undefined ? String(c[1].v).trim() : "";
+            const idVal = c[2] && c[2].v !== null && c[2].v !== undefined ? String(c[2].v).trim() : "";
+
+            if (idx === 0 && (qVal === "질문" || qVal.toLowerCase() === "question") && (idVal === "id" || aVal === "답변")) {
+              return;
+            }
+            if (!qVal && !aVal) return;
+
+            parsed.push({
+              rowNumber: idx + 2,
+              question: qVal,
+              answer: aVal,
+              userId: idVal || "익명",
+              source: "sheet"
+            });
+          });
+
+          state.sheetRows = parsed;
+
+          if (syncDot) syncDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+          if (syncText) syncText.textContent = "시트 실시간 연결됨";
+
+          const timeEl = document.getElementById("lastSyncedTime");
+          if (timeEl) {
+            const now = new Date();
+            timeEl.textContent = `최근 동기화: ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+          }
+
+          renderMessages();
+          if (isManual) showToast("구글 시트 데이터를 새로고침했습니다.");
+          resolve(true);
+        };
+
+        const sheetParam = state.sheetName ? `&sheet=${encodeURIComponent(state.sheetName)}` : "";
+        script.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(state.sheetId)}/gviz/tq?tqx=responseHandler:${callbackName}${sheetParam}&_=${Date.now()}`;
+        script.onerror = () => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(false);
+        };
+
+        document.body.appendChild(script);
+      });
+    }
+
+    function getCombinedMessages() {
+      return [...state.sheetRows, ...state.localPending];
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function renderInstructorReplyInput(item, itemKey, hasAnswer) {
+      if (!state.instructorMode) return "";
+      return `
+        <div class="mt-2.5 pt-2.5 border-t border-slate-200/80 flex items-center gap-2">
+          <input
+            type="text"
+            data-reply-input="${itemKey}"
+            value="${escapeHtml(item.answer || "")}"
+            placeholder="답변을 입력하면 시트 B열에 기록됩니다..."
+            class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+          />
+          <button
+            type="button"
+            data-reply-btn="${itemKey}"
+            data-source="${item.source}"
+            data-row="${item.rowNumber || ""}"
+            data-local-id="${item.localId || ""}"
+            class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white shrink-0 transition"
+          >
+            ${hasAnswer ? "답변 수정" : "답변 등록"}
+          </button>
+        </div>
+      `;
+    }
+
+    // Template 1: Minimal Messenger Style (Kakao/Toss Light Chat Bubble Look)
+    function renderMessengerItem(item, idx) {
+      const isMine = item.userId === state.userId;
+      const hasAnswer = Boolean(item.answer && item.answer.trim());
+      const avatarCls = getAvatarClass(item.userId);
+      const avatarChar = (item.userId || "익")[0];
+      const itemKey = item.source === "sheet" ? `sheet_${item.rowNumber}_${idx}` : `local_${item.localId || idx}`;
+
+      return `
+        <div class="msg-appear flex flex-col ${isMine ? "items-end" : "items-start"}">
+          <div class="flex items-start gap-2.5 max-w-[90%] sm:max-w-[80%] ${isMine ? "flex-row-reverse" : ""}">
+            <!-- Avatar -->
+            <div class="w-8 h-8 rounded-full border ${avatarCls} flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-2xs">
+              ${escapeHtml(avatarChar)}
+            </div>
+
+            <div class="flex flex-col ${isMine ? "items-end" : "items-start"} min-w-0">
+              <!-- Sender Name & Status -->
+              <div class="flex items-center gap-1.5 mb-1 px-0.5">
+                <span class="text-xs font-semibold text-slate-700">${escapeHtml(item.userId)}</span>
+                ${isMine ? `<span class="text-[10px] font-semibold text-blue-600">나</span>` : ""}
+                <span class="text-[10px] ${hasAnswer ? "text-emerald-600 font-medium" : "text-slate-400"}">
+                  ${hasAnswer ? "· 답변완료" : "· 질문"}
+                </span>
+              </div>
+
+              <!-- Question Chat Bubble -->
+              <div class="rounded-2xl ${
+                isMine
+                  ? "bg-blue-600 text-white rounded-tr-xs shadow-xs"
+                  : "bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs shadow-xs"
+              } px-4 py-2.5 text-sm whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(item.question)}</div>
+
+              <!-- Answer Bubble attached right below -->
+              ${
+                hasAnswer
+                  ? `
+                <div class="mt-2 flex items-start gap-2 max-w-full">
+                  <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 shadow-2xs">
+                    A
+                  </div>
+                  <div class="rounded-2xl rounded-tl-xs bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-sm text-emerald-950 whitespace-pre-wrap break-words leading-relaxed shadow-2xs">
+                    <div class="text-[11px] font-bold text-emerald-700 mb-0.5">강의자 답변</div>
+                    ${escapeHtml(item.answer)}
+                  </div>
+                </div>
+              `
+                  : ""
+              }
+
+              ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Template 2: Notion / Slido Clean Card Style
+    function renderCardItem(item, idx) {
+      const isMine = item.userId === state.userId;
+      const hasAnswer = Boolean(item.answer && item.answer.trim());
+      const avatarCls = getAvatarClass(item.userId);
+      const avatarChar = (item.userId || "익")[0];
+      const itemKey = item.source === "sheet" ? `sheet_${item.rowNumber}_${idx}` : `local_${item.localId || idx}`;
+
+      return `
+        <div class="msg-appear bg-white rounded-2xl border ${isMine ? "border-blue-300 ring-2 ring-blue-500/10" : "border-slate-200"} p-4 sm:p-5 shadow-2xs hover:border-slate-300 transition">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg border ${avatarCls} flex items-center justify-center font-bold text-xs">
+                ${escapeHtml(avatarChar)}
+              </div>
+              <span class="text-xs sm:text-sm font-semibold text-slate-800">${escapeHtml(item.userId)}</span>
+              ${isMine ? `<span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-200">내 질문</span>` : ""}
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+              hasAnswer
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-slate-100 text-slate-500 border border-slate-200"
+            }">
+              ${hasAnswer ? "✓ 답변완료" : "답변대기"}
+            </span>
+          </div>
+
+          <div class="text-sm sm:text-[15px] text-slate-800 font-medium whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(item.question)}</div>
+
+          ${
+            hasAnswer
+              ? `
+            <div class="mt-3.5 bg-slate-50 rounded-xl border border-slate-200/90 p-3.5 flex items-start gap-2.5">
+              <span class="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[11px] font-bold shrink-0 mt-0.5">답변</span>
+              <div class="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(item.answer)}</div>
+            </div>
+          `
+              : ""
+          }
+
+          ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+        </div>
+      `;
+    }
+
+    // Template 3: Warm Pastel Post-it Board Style
+    function renderPastelItem(item, idx) {
+      const hasAnswer = Boolean(item.answer && item.answer.trim());
+      const pStyle = getPastelStyle(item.userId);
+      const itemKey = item.source === "sheet" ? `sheet_${item.rowNumber}_${idx}` : `local_${item.localId || idx}`;
+
+      return `
+        <div class="msg-appear ${pStyle.bg} rounded-2xl border ${pStyle.border} p-4 shadow-2xs transition">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${pStyle.pill}">
+              <span>💬</span>
+              <span>${escapeHtml(item.userId)}</span>
+            </span>
+            <span class="text-[11px] font-semibold ${hasAnswer ? "text-emerald-700" : "text-slate-400"}">
+              ${hasAnswer ? "✨ 답변 등록됨" : "질문중"}
+            </span>
+          </div>
+
+          <div class="text-sm text-slate-800 whitespace-pre-wrap break-words leading-relaxed px-1 py-1">${escapeHtml(item.question)}</div>
+
+          ${
+            hasAnswer
+              ? `
+            <div class="mt-3 bg-white/90 rounded-xl border border-white p-3 shadow-2xs">
+              <div class="text-[11px] font-bold text-emerald-700 mb-1">👩‍🏫 강의자 답변</div>
+              <div class="text-sm text-slate-800 whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(item.answer)}</div>
+            </div>
+          `
+              : ""
+          }
+
+          ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+        </div>
+      `;
+    }
+
+    // Template 4: Compact Thread Style (Everytime / Slack Minimal List)
+    function renderCompactItem(item, idx) {
+      const isMine = item.userId === state.userId;
+      const hasAnswer = Boolean(item.answer && item.answer.trim());
+      const itemKey = item.source === "sheet" ? `sheet_${item.rowNumber}_${idx}` : `local_${item.localId || idx}`;
+
+      return `
+        <div class="msg-appear bg-white border-b border-slate-200 py-3 px-3 hover:bg-slate-50/70 transition first:rounded-t-xl last:rounded-b-xl last:border-b-0">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-bold text-slate-900">${escapeHtml(item.userId)}</span>
+                ${isMine ? `<span class="text-[10px] text-blue-600 font-semibold">[내 질문]</span>` : ""}
+                <span class="text-[11px] ${hasAnswer ? "text-emerald-600 font-semibold" : "text-amber-600"}">
+                  ${hasAnswer ? "답변완료" : "답변대기"}
+                </span>
+              </div>
+              <p class="text-sm text-slate-800 whitespace-pre-wrap break-words leading-snug">${escapeHtml(item.question)}</p>
+
+              ${
+                hasAnswer
+                  ? `
+                <div class="mt-2 pl-3 border-l-2 border-emerald-500 text-xs sm:text-sm text-slate-700 whitespace-pre-wrap break-words leading-snug">
+                  <span class="font-bold text-emerald-700 mr-1">↳ 답변:</span>${escapeHtml(item.answer)}
+                </div>
+              `
+                  : ""
+              }
+
+              ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMessages() {
+      const listEl = document.getElementById("messagesList");
+      if (!listEl) return;
+
+      const allItems = getCombinedMessages();
+
+      const totalCount = allItems.length;
+      const unansweredCount = allItems.filter((m) => !m.answer || !m.answer.trim()).length;
+      const answeredCount = allItems.filter((m) => m.answer && m.answer.trim()).length;
+      const mineCount = allItems.filter((m) => m.userId === state.userId).length;
+
+      document.getElementById("countAll").textContent = totalCount;
+      document.getElementById("countUnanswered").textContent = unansweredCount;
+      document.getElementById("countAnswered").textContent = answeredCount;
+      document.getElementById("countMine").textContent = mineCount;
+
+      const q = state.searchQuery.trim().toLowerCase();
+      const filtered = allItems.filter((item) => {
+        const hasAnswer = Boolean(item.answer && item.answer.trim());
+        if (state.filter === "unanswered" && hasAnswer) return false;
+        if (state.filter === "answered" && !hasAnswer) return false;
+        if (state.filter === "mine" && item.userId !== state.userId) return false;
+
+        if (q) {
+          const hay = `${item.question} ${item.answer} ${item.userId}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        listEl.className = "space-y-3 pb-4";
+        listEl.innerHTML = `
+          <div class="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-300 bg-white/60 space-y-2">
+            <p class="text-sm font-semibold text-slate-700">표시할 질문이 없습니다.</p>
+            <p class="text-xs text-slate-400">하단 입력창에 새 질문을 입력하거나 상단 [+샘플추가] 버튼을 눌러보세요.</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (state.template === "compact") {
+        listEl.className = "rounded-xl border border-slate-200 bg-white divide-y divide-slate-200 shadow-2xs mb-4";
+        listEl.innerHTML = filtered.map((item, idx) => renderCompactItem(item, idx)).join("");
+      } else if (state.template === "pastel") {
+        listEl.className = "grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4";
+        listEl.innerHTML = filtered.map((item, idx) => renderPastelItem(item, idx)).join("");
+      } else if (state.template === "card") {
+        listEl.className = "space-y-3 pb-4";
+        listEl.innerHTML = filtered.map((item, idx) => renderCardItem(item, idx)).join("");
+      } else {
+        listEl.className = "space-y-4 pb-4";
+        listEl.innerHTML = filtered.map((item, idx) => renderMessengerItem(item, idx)).join("");
+      }
+    }
+
+    async function handleQuestionSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById("questionInput");
+      const btn = document.getElementById("submitQuestionBtn");
+      if (!input) return;
+
+      const questionText = input.value.trim();
+      if (!questionText) {
+        showToast("질문 내용을 입력해 주세요.");
+        input.focus();
+        return;
+      }
+
+      input.value = "";
+      input.style.height = "auto";
+
+      const newEntry = {
+        localId: "loc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        question: questionText,
+        answer: "",
+        userId: state.userId || "익명",
+        source: "local"
+      };
+
+      state.localPending.push(newEntry);
+      storage.set("qa_local_pending", JSON.stringify(state.localPending));
+      renderMessages();
+
+      const chatContainer = document.getElementById("chatContainer");
+      if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      if (state.scriptUrl && state.scriptUrl.startsWith("http")) {
+        if (btn) btn.disabled = true;
+        try {
+          await fetch(state.scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "ask",
+              question: newEntry.question,
+              userId: newEntry.userId
+            })
+          });
+          showToast("구글 스프레드시트에 질문이 기록되었습니다!");
+          setTimeout(() => fetchSheetData(false), 1200);
+        } catch (err) {
+          showToast("전송 오류로 브라우저에 임시 저장되었습니다.");
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      } else {
+        showToast("질문이 대화창에 등록되었습니다!");
+      }
+    }
+
+    async function handleAnswerSubmit(btnEl) {
+      const key = btnEl.getAttribute("data-reply-btn");
+      const source = btnEl.getAttribute("data-source");
+      const rowNum = Number(btnEl.getAttribute("data-row"));
+      const localId = btnEl.getAttribute("data-local-id");
+      const inputEl = document.querySelector(`input[data-reply-input="${key}"]`);
+      if (!inputEl) return;
+
+      const answerText = inputEl.value.trim();
+
+      if (source === "local") {
+        const target = state.localPending.find((x) => x.localId === localId);
+        if (target) {
+          target.answer = answerText;
+          storage.set("qa_local_pending", JSON.stringify(state.localPending));
+          renderMessages();
+          showToast("답변이 반영되었습니다.");
+        }
+        return;
+      }
+
+      const sheetTarget = state.sheetRows.find((x) => x.rowNumber === rowNum);
+      if (sheetTarget) {
+        sheetTarget.answer = answerText;
+        renderMessages();
+      }
+
+      if (state.scriptUrl && state.scriptUrl.startsWith("http")) {
+        try {
+          await fetch(state.scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "answer",
+              rowNumber: rowNum,
+              answer: answerText
+            })
+          });
+          showToast(`시트 #${rowNum}행 B열에 답변이 업데이트되었습니다!`);
+          setTimeout(() => fetchSheetData(false), 1200);
+        } catch (e) {
+          showToast("시트 답변 저장 중 오류가 발생했습니다.");
+        }
+      } else {
+        showToast("답변이 화면에 표시되었습니다.");
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initUserIdentity();
+      applyTemplateStyle();
+      fetchSheetData(false);
+
+      setInterval(() => {
+        if (state.autoRefresh) fetchSheetData(false);
+      }, 5000);
+
+      const questionForm = document.getElementById("questionForm");
+      const questionInput = document.getElementById("questionInput");
+
+      questionForm.addEventListener("submit", handleQuestionSubmit);
+      questionInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          handleQuestionSubmit(e);
+        }
+      });
+      questionInput.addEventListener("input", () => {
+        questionInput.style.height = "auto";
+        questionInput.style.height = Math.min(questionInput.scrollHeight, 120) + "px";
+      });
+
+      document.querySelectorAll(".filter-tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.filter = btn.getAttribute("data-filter");
+          document.querySelectorAll(".filter-tab").forEach((b) => {
+            b.className = "filter-tab px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-500 hover:bg-slate-100";
+          });
+          btn.className = "filter-tab px-2.5 py-1 rounded-lg text-xs font-semibold transition bg-slate-900 text-white";
+          renderMessages();
+        });
+      });
+
+      document.getElementById("searchInput").addEventListener("input", (e) => {
+        state.searchQuery = e.target.value;
+        renderMessages();
+      });
+
+      document.getElementById("instructorModeBtn").addEventListener("click", () => {
+        state.instructorMode = !state.instructorMode;
+        const dot = document.getElementById("instructorDot");
+        const btn = document.getElementById("instructorModeBtn");
+        if (state.instructorMode) {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+          btn.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-700 transition shrink-0";
+          showToast("답변모드 ON: 각 질문 아래에서 바로 답변을 달아볼 수 있습니다.");
+        } else {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-slate-400";
+          btn.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-600 transition shrink-0";
+          showToast("답변모드가 해제되었습니다.");
+        }
+        renderMessages();
+      });
+
+      document.getElementById("messagesList").addEventListener("click", (e) => {
+        const replyBtn = e.target.closest("[data-reply-btn]");
+        if (replyBtn) handleAnswerSubmit(replyBtn);
+      });
+
+      document.getElementById("manualRefreshBtn").addEventListener("click", () => {
+        fetchSheetData(true);
+      });
+
+      document.getElementById("autoRefreshToggle").addEventListener("change", (e) => {
+        state.autoRefresh = e.target.checked;
+      });
+
+      document.getElementById("loadDemoBtn").addEventListener("click", () => {
+        state.localPending = [...INITIAL_SAMPLE_DATA];
+        storage.set("qa_local_pending", JSON.stringify(state.localPending));
+        renderMessages();
+        showToast("샘플 대화 3건이 복원되었습니다.");
+      });
+
+      // Nickname Modal
+      const nickModal = document.getElementById("nickModal");
+      const nickInput = document.getElementById("nickInput");
+
+      function openNickModal() {
+        nickInput.value = state.userId;
+        nickModal.classList.remove("hidden");
+        nickModal.classList.add("flex");
+        nickInput.focus();
+      }
+      function closeNickModal() {
+        nickModal.classList.add("hidden");
+        nickModal.classList.remove("flex");
+      }
+
+      document.getElementById("openNickModalBtn").addEventListener("click", openNickModal);
+      document.getElementById("footerNickBtn").addEventListener("click", openNickModal);
+      document.getElementById("closeNickModalBtn").addEventListener("click", closeNickModal);
+
+      document.getElementById("randomNickBtn").addEventListener("click", () => {
+        nickInput.value = generateRandomNickname();
+      });
+
+      document.getElementById("resetIpNickBtn").addEventListener("click", () => {
+        nickInput.value = state.ipSeedName || generateRandomNickname();
+      });
+
+      document.getElementById("saveNickBtn").addEventListener("click", () => {
+        const val = nickInput.value.trim();
+        if (!val) return;
+        state.userId = val;
+        storage.set("qa_user_id", state.userId);
+        updateUserDisplay();
+        renderMessages();
+        closeNickModal();
+        showToast(`ID가 '${state.userId}'(으)로 변경되었습니다.`);
+      });
+
+      // Setup Modal
+      const setupModal = document.getElementById("setupModal");
+      const sheetIdInput = document.getElementById("sheetIdInput");
+      const sheetNameInput = document.getElementById("sheetNameInput");
+      const scriptUrlInput = document.getElementById("scriptUrlInput");
+
+      function openSetupModal() {
+        sheetIdInput.value = state.sheetId;
+        sheetNameInput.value = state.sheetName;
+        scriptUrlInput.value = state.scriptUrl;
+        setupModal.classList.remove("hidden");
+        setupModal.classList.add("flex");
+      }
+      function closeSetupModal() {
+        setupModal.classList.add("hidden");
+        setupModal.classList.remove("flex");
+      }
+
+      document.getElementById("openSetupModalBtn").addEventListener("click", openSetupModal);
+      document.getElementById("bannerOpenSetupBtn").addEventListener("click", openSetupModal);
+      document.getElementById("closeSetupModalBtn").addEventListener("click", closeSetupModal);
+      document.getElementById("cancelSetupBtn").addEventListener("click", closeSetupModal);
+
+      document.getElementById("dismissBannerBtn").addEventListener("click", () => {
+        document.getElementById("gasNoticeBanner").classList.add("hidden");
+      });
+
+      document.getElementById("saveSetupBtn").addEventListener("click", () => {
+        state.sheetId = sheetIdInput.value.trim() || DEFAULT_SHEET_ID;
+        state.sheetName = sheetNameInput.value.trim() || DEFAULT_SHEET_NAME;
+        state.scriptUrl = scriptUrlInput.value.trim();
+
+        storage.set("qa_sheet_id", state.sheetId);
+        storage.set("qa_sheet_name", state.sheetName);
+        storage.set("qa_script_url", state.scriptUrl);
+
+        closeSetupModal();
+        fetchSheetData(true);
+      });
+
+      document.getElementById("clearLocalPendingBtn").addEventListener("click", () => {
+        state.localPending = [];
+        storage.set("qa_local_pending", "[]");
+        renderMessages();
+        closeSetupModal();
+        showToast("샘플 질문이 모두 지워졌습니다.");
+      });
+
+      document.getElementById("copyGasCodeBtn").addEventListener("click", () => {
+        const codeText = document.getElementById("gasCodeBlock").innerText;
+        const temp = document.createElement("textarea");
+        temp.value = codeText;
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+          document.execCommand("copy");
+          showToast("코드가 복사되었습니다!");
+        } catch (e) {}
+        document.body.removeChild(temp);
+      });
+    });
+  </script>
 </body>
 </html>
