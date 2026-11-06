@@ -76,7 +76,7 @@
         </button>
 
         <!-- Open Google Sheet Link -->
-        <a href="https://docs.google.com/spreadsheets/d/1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer" title="구글 스프레드시트 열기" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-700 text-xs font-medium transition">
+        <a href="https://docs.google.com/spreadsheets/d/1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer" title="구글 스프레드시트 열기" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-700 text-xs font-medium transition">
           <span>시트 열기</span>
         </a>
 
@@ -120,9 +120,6 @@
           </svg>
         </div>
 
-        <button id="loadDemoBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200/70 text-[11px] text-slate-600 transition shrink-0" title="샘플 질문 다시 불러오기">
-          샘플 대화 미리보기
-        </button>
       </div>
     </div>
   </div>
@@ -250,7 +247,7 @@
       <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
         <div>
           <h2 class="text-base font-bold text-slate-900">⚙️ 구글 스프레드시트 연동 설정</h2>
-          <p class="text-xs text-slate-500 mt-0.5">시트 ID: 1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8</p>
+          <p class="text-xs text-slate-500 mt-0.5">시트 ID: 1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os</p>
         </div>
         <button id="closeSetupModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1">✕</button>
       </div>
@@ -259,7 +256,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
           <div class="sm:col-span-2">
             <label class="block text-xs font-semibold text-slate-700 mb-1">Google 스프레드시트 ID</label>
-            <input id="sheetIdInput" type="text" value="1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:border-blue-500" />
+            <input id="sheetIdInput" type="text" value="1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:outline-none focus:border-blue-500" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">시트 탭 이름</label>
@@ -335,7 +332,7 @@
 
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
         <button id="clearLocalPendingBtn" type="button" class="text-xs text-slate-500 hover:text-rose-600 transition">
-          로컬 임시 질문 초기화
+          시트 기준 대화창 새로고침
         </button>
         <div class="flex items-center gap-2">
           <button id="cancelSetupBtn" type="button" class="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-medium text-slate-700 transition">
@@ -357,7 +354,7 @@
   </div>
 
   <script>
-    const DEFAULT_SHEET_ID = "1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8";
+    const DEFAULT_SHEET_ID = "1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os";
     const DEFAULT_SHEET_NAME = "시트1";
     const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGd6IuZVauUfeTm15964p0BJLul-g-uYAv7NgaFsT1mkvi3JGpD8O1kiqR-Exgpw_P/exec";
 
@@ -382,36 +379,10 @@
       }
     };
 
-    // Sample Q&A data pre-populated so user can immediately compare the 4 templates visually
-    const INITIAL_SAMPLE_DATA = [
-      {
-        localId: "sample_1",
-        question: "교수님! 오늘 강의 후반부에 설명해주신 비동기 처리(Async/Await)에서 에러 핸들링은 try-catch로 감싸는 게 가장 일반적인가요?",
-        answer: "네 맞습니다! async 함수 내부에서는 try-catch 블록을 사용하는 것이 가장 가독성이 좋고, 호출부에서 .catch()를 병행할 수도 있습니다.",
-        userId: "질문하는돌고래_24",
-        time: "15:20",
-        source: "local"
-      },
-      {
-        localId: "sample_2",
-        question: "기말 텀프로젝트 팀 인원은 몇 명까지 가능한지, 1인 개인 프로젝트로 진행해도 되는지 궁금합니다.",
-        answer: "팀당 최대 3명까지 가능하며, 1인 개인으로 진행하셔도 평가 기준은 동일하게 적용됩니다.",
-        userId: "열정적인부엉이_81",
-        time: "15:22",
-        source: "local"
-      },
-      {
-        localId: "sample_3",
-        question: "오늘 실습한 예제 코드와 강의안 PDF는 어디서 다운로드할 수 있나요?",
-        answer: "",
-        userId: "호기심많은수달_53",
-        time: "15:25",
-        source: "local"
-      }
-    ];
+// 샘플 데이터 완전 삭제됨 (구글 시트 데이터만 단일 소스로 사용)
 
     let storedSheetId = storage.get("qa_sheet_id", DEFAULT_SHEET_ID);
-    if (storedSheetId === "1XFEHJaGjzgnkuF7e1HZpB1kMzd2ScqkLs3k011Kv4Os") {
+    if (storedSheetId === "1jh4nXvQXaYx2BOWK28j7ZLrQcuieECOp0CSexTyd4I8" || !storedSheetId) {
       storedSheetId = DEFAULT_SHEET_ID;
       storage.set("qa_sheet_id", DEFAULT_SHEET_ID);
     }
@@ -439,12 +410,9 @@
       localPending: []
     };
 
-    try {
-      const savedPending = storage.get("qa_local_pending", "");
-      state.localPending = savedPending ? JSON.parse(savedPending) || [] : [];
-    } catch (e) {
-      state.localPending = [];
-    }
+    // 로컬 임시 캐시 완전 제거 (새로고침 시 구글 시트 데이터만 가져와서 깨끗하게 다시 그립니다)
+    storage.remove("qa_local_pending");
+    state.localPending = [];
     state.renderedKeys = new Set();
     state.hasInitialRender = false;
 
@@ -705,6 +673,8 @@
           const isChanged = newRawSig !== oldRawSig;
 
           state.sheetRows = parsed;
+          // 시트 데이터가 로드되면 로컬 임시 대화는 완전히 비우고 시트 데이터만 표시합니다
+          state.localPending = [];
 
           if (syncDot) syncDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
           if (syncText) syncText.textContent = "시트 실시간 연결됨";
@@ -1075,7 +1045,7 @@
       };
 
       state.localPending.push(newEntry);
-      storage.set("qa_local_pending", JSON.stringify(state.localPending));
+      // localStorage에 영구 저장하지 않음 (새로고침 시 시트 기준으로만 표시)
       renderMessages();
 
       const chatContainer = document.getElementById("chatContainer");
@@ -1148,18 +1118,17 @@
       });
 
       document.getElementById("manualRefreshBtn").addEventListener("click", () => {
+        // 새로고침 시 이전 화면의 대화를 완전히 비우고 구글 시트에서 새로 받아 다시 그립니다
+        const listEl = document.getElementById("messagesList");
+        if (listEl) listEl.innerHTML = "";
+        state.renderedKeys.clear();
+        state.localPending = [];
+        state.hasInitialRender = false;
         fetchSheetData(true);
       });
 
       document.getElementById("autoRefreshToggle").addEventListener("change", (e) => {
         state.autoRefresh = e.target.checked;
-      });
-
-      document.getElementById("loadDemoBtn").addEventListener("click", () => {
-        state.localPending = [...INITIAL_SAMPLE_DATA];
-        storage.set("qa_local_pending", JSON.stringify(state.localPending));
-        renderMessages();
-        showToast("샘플 대화 3건이 복원되었습니다.");
       });
 
       // Nickname Modal
@@ -1241,11 +1210,15 @@
       });
 
       document.getElementById("clearLocalPendingBtn").addEventListener("click", () => {
+        storage.remove("qa_local_pending");
         state.localPending = [];
-        storage.set("qa_local_pending", "[]");
-        renderMessages();
+        const listEl = document.getElementById("messagesList");
+        if (listEl) listEl.innerHTML = "";
+        state.renderedKeys.clear();
+        state.hasInitialRender = false;
+        fetchSheetData(true);
         closeSetupModal();
-        showToast("샘플 질문이 모두 지워졌습니다.");
+        showToast("대화창을 시트 기준으로 완전히 새로고침했습니다.");
       });
 
       document.getElementById("copyGasCodeBtn").addEventListener("click", () => {
