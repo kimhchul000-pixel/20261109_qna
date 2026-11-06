@@ -445,6 +445,7 @@
     state.localPending = [];
     state.renderedKeys = new Set();
     state.hasInitialRender = false;
+    state.hasScrolledOnce = false;
 
     const TEMPLATE_META = {
       messenger: {
@@ -476,7 +477,19 @@
       "고양이", "강아지", "판다", "토끼", "코알라"
     ];
 
-        function formatDisplayTime(rawTime) {
+        function scrollToBottom(smooth = false) {
+      const chat = document.getElementById("chatContainer");
+      if (!chat) return;
+      requestAnimationFrame(() => {
+        if (smooth) {
+          chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+        } else {
+          chat.scrollTop = chat.scrollHeight;
+        }
+      });
+    }
+
+    function formatDisplayTime(rawTime) {
       if (!rawTime) {
         const now = new Date();
         return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -982,6 +995,7 @@
 
       // Smart In-Place DOM Diffing: preserve existing nodes so they NEVER flash or re-animate
       const currentKeys = new Set();
+      let hasAddedItems = false;
 
       filtered.forEach((item, idx) => {
         const key = item.source === "sheet" ? `s_${item.rowNumber}` : `l_${item.localId || idx}`;
@@ -992,6 +1006,7 @@
 
         if (!existingEl) {
           // Brand new question: create element with entrance animation
+          hasAddedItems = true;
           const temp = document.createElement("div");
           temp.innerHTML = renderMessengerItem(item, key, true);
           const newEl = temp.firstElementChild;
@@ -1039,6 +1054,12 @@
           state.renderedKeys.delete(k);
         }
       });
+
+      // 대화창을 항상 맨 아래(최신 질문 위치)로 자동 스크롤
+      if (hasAddedItems || !state.hasScrolledOnce) {
+        scrollToBottom(state.hasScrolledOnce);
+        state.hasScrolledOnce = true;
+      }
     }
 
     async function handleQuestionSubmit(e) {
@@ -1138,6 +1159,7 @@
             b.className = "filter-tab px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-500 hover:bg-slate-100";
           });
           btn.className = "filter-tab px-2.5 py-1 rounded-lg text-xs font-semibold transition bg-slate-900 text-white";
+          state.hasScrolledOnce = false;
           renderMessages();
         });
       });
@@ -1154,6 +1176,7 @@
         state.renderedKeys.clear();
         state.localPending = [];
         state.hasInitialRender = false;
+        state.hasScrolledOnce = false;
         fetchSheetData(true);
       });
 
