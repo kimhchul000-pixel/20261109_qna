@@ -98,6 +98,11 @@
           <span>시트 열기</span>
         </a>
 
+        <!-- QR Code Button -->
+        <button id="openQrModalBtn" type="button" title="강의실용 학생 접속 QR 코드 열기" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-semibold transition">
+          <span>📱 QR 코드</span>
+        </button>
+
         <!-- Setup Modal Button -->
         <button id="openSetupModalBtn" type="button" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 text-slate-700 text-xs font-medium transition">
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -360,6 +365,36 @@
             설정 저장 및 동기화
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: QR Code Presentation Modal -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3.5 text-center">
+      <div class="flex items-center justify-between pb-1 border-b border-slate-100">
+        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+          <span>📱 학생 질문방 입장 QR</span>
+        </h2>
+        <button id="closeQrModalBtn" type="button" class="text-slate-400 hover:text-slate-700 p-1 text-base">✕</button>
+      </div>
+
+      <div class="p-3 bg-white rounded-2xl border border-slate-200 shadow-xs inline-block">
+        <img id="qrModalImg" src="data:image/png;base64,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" alt="학생용 Q&A 접속 QR 코드" class="w-56 h-56 mx-auto select-none" />
+      </div>
+
+      <div class="space-y-1">
+        <p class="text-xs font-semibold text-slate-800">스마트폰 카메라로 스캔하면 바로 입장합니다</p>
+        <p class="text-[11px] text-slate-500 font-mono break-all select-all">https://kimhchul000-pixel.github.io/20261109_qna/</p>
+      </div>
+
+      <div class="flex items-center justify-center gap-2 pt-1">
+        <button id="copyUrlBtn" type="button" class="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition">
+          🔗 링크 복사
+        </button>
+        <a id="downloadQrBtn" href="data:image/png;base64,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" download="qna-qr-code.png" class="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition inline-flex items-center justify-center gap-1">
+          💾 QR 다운로드
+        </a>
       </div>
     </div>
   </div>
@@ -764,6 +799,31 @@
         .replace(/'/g, "&#039;");
     }
 
+    function formatContentWithLinks(rawStr, isMyQuestion = false, isAnswer = false) {
+      if (!rawStr) return "";
+      const escaped = escapeHtml(rawStr);
+      const urlRegex = /(https?:\/\/[^\s<"'>]+)/gi;
+
+      let linkClass = "underline underline-offset-2 break-all transition ";
+      if (isMyQuestion) {
+        linkClass += "text-white hover:text-white/80 decoration-white/70 hover:decoration-white font-semibold";
+      } else if (isAnswer) {
+        linkClass += "text-emerald-800 hover:text-emerald-950 decoration-emerald-500 hover:decoration-emerald-700 font-semibold";
+      } else {
+        linkClass += "text-blue-600 hover:text-blue-800 decoration-blue-400 hover:decoration-blue-600 font-medium";
+      }
+
+      return escaped.replace(urlRegex, (url) => {
+        let cleanUrl = url;
+        let trailing = "";
+        while (/[.,;:)\]}>]$/.test(cleanUrl)) {
+          trailing = cleanUrl.slice(-1) + trailing;
+          cleanUrl = cleanUrl.slice(0, -1);
+        }
+        return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="${linkClass}">${cleanUrl}</a>${trailing}`;
+      });
+    }
+
     // Template 1: Minimal Messenger Style (Kakao/Toss Light Chat Bubble Look)
     function renderMessengerItem(item, itemKey, isNew = false) {
       const isMine = item.userId === state.userId;
@@ -796,7 +856,7 @@
                   isMine
                     ? "bg-blue-600 text-white rounded-tr-xs shadow-xs"
                     : "bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs shadow-xs"
-                } px-4 py-2.5 text-sm whitespace-pre-wrap break-words leading-relaxed">${escapeHtml(item.question)}</div>
+                } px-4 py-2.5 text-sm whitespace-pre-wrap break-words leading-relaxed">${formatContentWithLinks(item.question, isMine, false)}</div>
                 <span class="text-[10px] text-slate-400 shrink-0 pb-0.5 select-none">${escapeHtml(displayTime)}</span>
               </div>
 
@@ -811,7 +871,7 @@
                   </div>
                   <div class="rounded-2xl rounded-tl-xs bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-sm text-emerald-950 whitespace-pre-wrap break-words leading-relaxed shadow-2xs">
                     <div class="text-[11px] font-bold text-emerald-700 mb-0.5">강의자 답변</div>
-                    <div data-answer-content>${escapeHtml(item.answer)}</div>
+                    <div data-answer-content>${formatContentWithLinks(item.answer, false, true)}</div>
                   </div>
                 </div>
               `
@@ -864,7 +924,7 @@
               : ""
           }
 
-          ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+          
         </div>
       `;
     }
@@ -900,7 +960,7 @@
               : ""
           }
 
-          ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+          
         </div>
       `;
     }
@@ -934,7 +994,7 @@
                   : ""
               }
 
-              ${renderInstructorReplyInput(item, itemKey, hasAnswer)}
+              
             </div>
           </div>
         </div>
@@ -1034,7 +1094,7 @@
                     </div>
                     <div class="rounded-2xl rounded-tl-xs bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-sm text-emerald-950 whitespace-pre-wrap break-words leading-relaxed shadow-2xs">
                       <div class="text-[11px] font-bold text-emerald-700 mb-0.5">강의자 답변</div>
-                      <div data-answer-content>${escapeHtml(item.answer)}</div>
+                      <div data-answer-content>${formatContentWithLinks(item.answer, false, true)}</div>
                     </div>
                   </div>
                 `;
@@ -1182,6 +1242,34 @@
 
       document.getElementById("autoRefreshToggle").addEventListener("change", (e) => {
         state.autoRefresh = e.target.checked;
+      });
+
+      // QR Code Modal
+      const qrModal = document.getElementById("qrModal");
+      function openQrModal() {
+        qrModal.classList.remove("hidden");
+        qrModal.classList.add("flex");
+      }
+      function closeQrModal() {
+        qrModal.classList.add("hidden");
+        qrModal.classList.remove("flex");
+      }
+      document.getElementById("openQrModalBtn").addEventListener("click", openQrModal);
+      document.getElementById("closeQrModalBtn").addEventListener("click", closeQrModal);
+
+      document.getElementById("copyUrlBtn").addEventListener("click", () => {
+        const url = "https://kimhchul000-pixel.github.io/20261109_qna/";
+        const temp = document.createElement("textarea");
+        temp.value = url;
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+          document.execCommand("copy");
+          showToast("학생용 접속 주소가 복사되었습니다!");
+        } catch (e) {
+          showToast("복사에 실패했습니다.");
+        }
+        document.body.removeChild(temp);
       });
 
       // Nickname Modal
